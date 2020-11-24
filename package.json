@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.0",
+    "bluebird": "^3.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-fileupload": "^1.2.0",
+    "express-session": "^1.17.1",
+    "nodemon": "^2.0.6",
+    "pg": "^8.5.0",
+    "pg-hstore": "^2.3.3",
+    "pg-promise": "^10.7.3",
+    "sequelize": "^6.3.5"
+  }
+}
