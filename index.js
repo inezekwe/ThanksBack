@@ -6,6 +6,7 @@ const session = require('express-session');
 const portNumber = process.env.PORT || 4000;
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
+const { response } = require('express');
 
 app.use(cors({
     origin: "http://localhost:3000",
@@ -26,7 +27,8 @@ const config = {
     host: 'localhost',
     port: 5432,
     database: 'thanks',
-    user: 'filmonkesete'
+    user: 'thanks',
+    password: 'thankyou'
 };
 
 // pg-promise initialization options:
@@ -89,11 +91,12 @@ app.post("/documents", async (req, res) => {
 // ---------------------------------------------------- //
 
 //get items from gratitudes table
-app.get('/api/gratitude', (req, res) => {
-    db.query(`SELECT title, entry, date_of_entry
+app.post('/api/saved_gratitudes', (req, res) => {
+    db.query(`SELECT id, isdeleted, title, entry, date_of_entry
               FROM gratitudes
-              LIMIT 10`)
+              WHERE userid=${req.body.id}`)
             .then((response) => {
+                //console.log(req.session);
                 res.send(response)
             })
             .catch((error) => {
@@ -105,8 +108,8 @@ app.get('/api/gratitude', (req, res) => {
 
 //insert entry into gratitudes table
 app.post('/api/gratitude', (req, res) => {
-    db.query(`INSERT INTO gratitudes (entry, title)
-                VALUES ('${req.body.entry}', '${req.body.title}')`)
+    db.query(`INSERT INTO gratitudes (entry, title, userid)
+                VALUES ('${req.body.entry}', '${req.body.title}', '${req.body.id}')`)
 })
 
 //no association with a user session is in place now. in order for that to happen it would need to be something like the following where 'req.session.user[0].id' is referenced.
@@ -119,10 +122,39 @@ app.post('/api/gratitude', (req, res) => {
 
 // ---------------------------------------------------- //
 
-//insert drink item into quotes table
-app.post('/api/quotes', (req, rest) => {
-    db.query(`INSERT INTO quotes (author, quote)
-            VALUES ('${req.body.author}', '${req.body.quote}' )`)
+//insert saved quotes into quotes table
+app.post('/api/quotes', (req, res) => {
+    db.query(`INSERT INTO quotes (author, quote, userid)
+            VALUES ('${req.body.author}', '${req.body.quote}', ${req.body.id} )`)
+            .then(response => {
+                res.send(response);
+            })
+            .catch(err => {
+                console.log(err);
+                res.send(err);
+            })
+})
+
+//get saved quotes from quotes table according to user id
+app.post('/api/saved_quotes', (req, res) => {
+    db.query(`SELECT id, isdeleted, author, quote, date_of_entry FROM quotes WHERE userid=${req.body.id}`)
+        .then(response => {
+            res.json({message: "OK", results: response});
+        })
+        .catch(err => {
+            res.send(err);
+        })
+})
+
+//remove saved quote from table according to user id
+app.post('/api/remove_quote', (req, res) => {
+    db.query(`UPDATE quotes SET isdeleted=true WHERE id=${req.body.id} AND userid = ${req.body.userid}`)
+        .then(response => {
+            res.json(response);
+        })
+        .catch(err => {
+            res.send(err);
+        })
 })
 
 
@@ -145,7 +177,7 @@ app.post('/register', (req, res) => {
         res.status(404).send("Password is required");
     } 
     if (!req.body.name) {
-        res.status(404).send("Password is required");
+        res.status(404).send("Name is required");
     } else {
         let email = req.body.email;
         let password = req.body.password;
@@ -181,8 +213,7 @@ app.post('/login', (req, res) => {
                 if (result === true) {
                     // assign results from db.query above to a session
                     req.session.user = results;
-                    console.log(req.session.user);
-                    res.send("OK");
+                    res.json({message: "OK", response: results});
                 } else {
                     res.send("Invalid Credentials");
                 }
